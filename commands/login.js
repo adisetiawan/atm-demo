@@ -1,12 +1,12 @@
 module.exports = [
   {
     type: 'input',
-    name: 'username',
+    name: 'name',
     message: 'enter your name to login',
   },
   {
     type: 'password',
-    name: 'pin',
+    name: 'password',
     message: 'enter your 4 digit pin (default 1234 for new user)',
   }
 ];

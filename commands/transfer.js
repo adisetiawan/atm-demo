@@ -2,7 +2,7 @@ module.exports = [
   {
     type: 'input',
     name: 'destination',
-    message: 'enter destination username',
+    message: 'enter destination name',
   },
   {
     type: 'input',

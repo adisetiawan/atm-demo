@@ -1,23 +1,65 @@
-import fetch from 'node-fetch';
+const { get, post } = require('httpie');
 
 const api = {
-	login: async () => {
-		const response = await fetch('https://api.github.com/users/github');
-		const data = await response.json();
-		return data;
-	},
-
-	deposit: async () => {
+	
+	login: async (data) => {
 		
+		try {
+			const res = await post('http://localhost:3000/login', {
+		    	body: {
+		    		name: data.name,
+		    		password: data.password,
+		    	}
+			});
+
+			return res.data;
+		
+		} catch (err) {
+			console.error('Error!', err.statusCode, err.message);
+			console.error('~> headers:', err.headers);
+			console.error('~> data:', err.data);
+		}
+
 	},
 
-	transfer: async () => {
+	deposit: async (data) => {
+		
+		try {
+			const res = await post('http://localhost:3000/deposit', {
+		    	body: {
+		    		name: data.name,
+		    		amount: data.amount,
+		    	}
+			});
 
+			return res.data;
+		
+		} catch (err) {
+			console.error('Error!', err.statusCode, err.message);
+			console.error('~> headers:', err.headers);
+			console.error('~> data:', err.data);
+		}
 	},
 
-	logout: async () => {
+	transfer: async (data) => {
 
-	},
+		try {
+			const res = await post('http://localhost:3000/transfer', {
+		    	body: {
+		    		name: data.name,
+		    		destination: data.destination,
+		    		amount: data.amount,
+		    	}
+			});
+
+			return res.data;
+		
+		} catch (err) {
+			console.error('Error!', err.statusCode, err.message);
+			console.error('~> headers:', err.headers);
+			console.error('~> data:', err.data);
+		}
+	}
 
 }
 
