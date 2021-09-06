@@ -1,17 +1,16 @@
-const { prompt } = require('enquirer');
-
-const transfer = async () => {
-  return await prompt([
-  		{
-          type: 'input',
-          name: 'destination',
-          message: 'enter destination username',
-        },
-        {
-          type: 'number',
-          name: 'amount',
-          message: 'enter amount',
-        }]);
-}
-
-module.exports = transfer;
+module.exports = [
+  {
+    type: 'input',
+    name: 'destination',
+    message: 'enter destination username',
+  },
+  {
+    type: 'input',
+    name: 'amount',
+    message: 'enter amount',
+    validate(value) {
+      const valid = !isNaN(parseFloat(value));
+      return valid || 'Please enter a number';
+    },
+  }
+];

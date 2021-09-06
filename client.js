@@ -1,83 +1,75 @@
+const inquirer = require('inquirer');
 const figlet = require('figlet');
-const { prompt } = require('enquirer');
 
-const header = figlet.textSync('Demo  ATM', {
-    horizontalLayout: 'default',
-    verticalLayout: 'default',
-    width: 80,
-    whitespaceBreak: true
-});
+const mainPrompt = require('./commands/main');
+const loginPrompt = require('./commands/login');
+const depositPrompt = require('./commands/deposit');
+const transferPrompt = require('./commands/transfer');
 
-const commands = ['login', 'deposit', 'transfer', 'logout'];
+const runCLI = () => {
+    const header = figlet.textSync('Demo  ATM', {
+        horizontalLayout: 'default',
+        verticalLayout: 'default',
+        width: 80,
+        whitespaceBreak: true
+    });
+    console.log(header);
 
-console.log(header);
+    inquirer.prompt(loginPrompt).then((answers) => {
+        console.log(answers);
+        main(answers.username);
 
-const main = require('./commands/main');
-const login = require('./commands/login');
-const deposit = require('./commands/deposit');
-const transfer = require('./commands/transfer');
-const logout = require('./commands/logout');
+    });
+}
 
-prompt(main)
-  .then((answers) => {
-      
-      switch(answers.atmcommand) {
-        
-        case 'login':
-            login();
-            
-        break;
+const main = (name) => {
+    
+    console.log(`welcome ${name}`);
 
-        case 'deposit':
-            
-            deposit();
-        break;
+    inquirer.prompt(mainPrompt).then((answers) => {
 
-        case 'transfer':
-            
-            transfer();
-        break;
+        switch(answers.mainmenu) {
 
-        case 'logout':
-            
-            logout();
-        break;
-    }
+            case 'deposit':
+                deposit(name);
+            break;
 
-  })
-  .catch(console.error);
+            case 'transfer':
+                transfer(name);
+            break;
 
+            case 'logout':
+                logout(name);
+            break;
 
-// (async () => {
+            default:
+                main(name);
+            break;
+        }
 
-//     const respCommand = await prompt({
-//       type: 'select',
-//       name: 'atmcommand',
-//       message: 'Select available ATM Command:',
-//       choices: commands
-//     });
+    });
+}
 
-//     switch(respCommand.atmcommand) {
-//         case 'login':
-//             const login = require('./commands/login');
-//             login();
-            
-//         break;
+const deposit = (name) => {
+    inquirer.prompt(depositPrompt).then((answers) => {
 
-//         case 'deposit':
-//             const deposit = require('./commands/deposit');
-//             deposit();
-//         break;
+        console.log(answers);
+        main(name);
 
-//         case 'transfer':
-//             const transfer = require('./commands/transfer');
-//             transfer();
-//         break;
+    });
+}
 
-//         case 'logout':
-//             const logout = require('./commands/logout');
-//             logout();
-//         break;
-//     }
+const transfer = (name) => {
+    inquirer.prompt(transferPrompt).then((answers) => {
 
-// })();
+        console.log(answers);
+        main(name);
+
+    });
+}
+
+const logout = (name) => {
+    console.log(`good bye ${name} !`);
+}
+
+runCLI();
