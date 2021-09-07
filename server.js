@@ -5,23 +5,21 @@ const { PORT=3000 } = process.env;
 const Database = require('better-sqlite3');
 const db = new Database('atm.db', { verbose: console.log });
 
-const getBalance = (name) => {
-    const rows = db.prepare('SELECT * FROM history WHERE name = ?').all(name);
-    if(rows.length > 0) {
-        //iterate to get balance
-
-        return rows;
+const getUser = (name) => {
+    const row = db.prepare('SELECT * FROM user WHERE name = ?').get(name);
+    if(row) {
+        return row;
     } else {
-        return 0;
+        return false;
     }
 }
 
 const auth = (data) => {
-    const row = db.prepare('SELECT * FROM user where name = ?').get(data.name);
-    if(row) {
+    const user = getUser(data.name);
+    if(user) {
         //check password
-        if(row.password == data.password) {
-            return row;
+        if(user.password == data.password) {
+            return user;
         } else {
             return false;
         }
@@ -34,22 +32,108 @@ const auth = (data) => {
     }
 }
 
-const deposit = (data) => {
-    //get current user balance
-    const row = db.prepare('SELECT * FROM user where name = ?').get(data.name);
+const addDeposit = (data) => {
+    const date = new Date();
+
+    const info = db.prepare('INSERT INTO history VALUES (?, ?, ?, ?, ?)').run(data.name, 'deposit', '', parseInt(data.amount), date.toISOString());
+    
+    if (info.changes == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+const addTransfer = (data) => {
+    const date = new Date();
+
+    const info = db.prepare('INSERT INTO history VALUES (?, ?, ?, ?, ?)').run(data.name, 'transfer', data.destination, parseInt(data.amount), date.toISOString());
+    
+    if (info.changes == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+const userHasOwe = (data) => {
+    //get user owe
+    const row = db.prepare('SELECT * FROM owe where who = ? AND to = ? AND owe > 0 ORDER BY date(created) DESC Limit 1').get(data.name, data.destination);
+    
     if(row) {
-        let balance = row.balance;
+        return row;
+    } else {
+        return false;
+    }
+}
+
+const getOneOwe = (data) => {
+    //get user owe
+    const row = db.prepare('SELECT * FROM owe where who = ? AND owe > 0 ORDER BY date(created) DESC').get(data.name);
+    if(row) {
+        return row;
+    } else {
+        return false;
+    }
+}
+
+const addOwe = (data, amount) => {
+    //add new owe
+    const info = db.prepare('INSERT INTO owe VALUES (?, ?, ?, ?)').run(amount, data.name, data.destination, date.toISOString());
+    
+    if(info.changes == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+const updateOwe = (name, destination, amount) => {
+    //add new owe
+    const info = db.prepare('UPDATE owe SET owe = ? WHERE who = ? AND to = ?').run(amount, name, destination);
+    
+    if(info.changes == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+const updateBalance = (name, amount) => {
+    //add new owe
+    const info = db.prepare('UPDATE user SET balance = ? WHERE name = ?').run(parseInt(amount), name);
+    
+    if(info.changes == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+const updateBalanceUser = (data, balance) => {
+    
+    const newBalance = balance + parseInt(data.amount);  
+
+    const info = db.prepare('UPDATE user SET balance = ? WHERE name = ?').run(newBalance, data.name);
+
+    if(info.changes == 1) {
+        return newBalance;
+    } else {
+        return false;
+    }
+}
+
+const deposit = (data) => {
+    const user = getUser(data.name);
+
+    if(user) {
+        let balance = user.balance;
         //add history 
-        const date = new Date();
+        const depositHist = addDeposit(data);
 
-        const info = db.prepare('INSERT INTO history VALUES (?, ?, ?, ?, ?)').run(data.name, 'deposit', '', parseInt(data.amount), date.toISOString());
+        if (depositHist == true) {
+            return updateBalanceUser(data, balance);
 
-        if (info.changes == 1) {
-            //update user balance
-            balance = parseInt(data.amount) + parseInt(balance);
-            db.prepare('UPDATE user SET balance = ? WHERE name = ?').run(parseInt(balance), data.name);
-
-            return balance;
         } else {
             return false;
         }
@@ -60,29 +144,34 @@ const deposit = (data) => {
 }
 
 const transfer = (data) => {
-    //get current user balance
-    const row = db.prepare('SELECT * FROM user where name = ?').get(data.name);
-    //get destination
-    const rowDest = db.prepare('SELECT * FROM user where name = ?').get(data.destination);
+    
+    const userFrom = getUser(data.name);
+    const userTo = getUser(data.destination);
 
-    if(row && rowDest) {
-        let balanceUser = row.balance;
-        let balanceDest = rowDest.balance;
+    if(userFrom && userTo) {
+        let balanceUser = userFrom.balance;
+        let balanceDest = userTo.balance;
 
-        //add history 
-        const date = new Date();
+        const transferHist = addTransfer(data);
 
-        const info = db.prepare('INSERT INTO history VALUES (?, ?, ?, ?, ?)').run(data.name, 'transfer', data.destination, parseInt(data.amount), date.toISOString());
+        if (transferHist == true) {
+            
+            if(parseInt(data.amount) > balanceUser) {
+                let newBalanceUser = 0;
+                const owe = parseInt(data.amount) - balanceUser;
+                const realTransfer = balanceUser;
 
-        if (info.changes == 1) {
-            //update user balance
-            balanceUser = parseInt(balanceUser) - parseInt(data.amount);
-            db.prepare('UPDATE user SET balance = ? WHERE name = ?').run(parseInt(balanceUser), data.name);
-            //update destination balance
-            balanceDest = parseInt(data.amount) + parseInt(balanceDest);
-            db.prepare('UPDATE user SET balance = ? WHERE name = ?').run(parseInt(balanceDest), data.destination);
+                //update user balance
+                const updateBalanceResult = updateBalance(userFrom.name, newBalanceUser);
+                //update user owe
+                const updateOweResult = updateOwe(userFrom.name, userTo.name, owe);
+                //update destination balance
+                const updateBalanceDestResult = updateBalance(userFrom.destination, realTransfer);
 
-            return balanceUser;
+            
+            } 
+
+
         } else {
             return false;
         }
@@ -91,6 +180,7 @@ const transfer = (data) => {
         return false;
     }
 }
+
 
 polka()
     .use(json())
@@ -162,6 +252,8 @@ polka()
                 } else {
                     //get balance
                     resp.balance = balance;
+                    
+
                     send(res, 200, {data: resp});
                 }
             }
