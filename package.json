@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_ENV=test jest --testTimeout=10000 --detectOpenHandles"
   },
   "keywords": [],
   "author": "",
@@ -17,5 +17,14 @@
     "httpie": "^1.1.2",
     "inquirer": "^8.1.2",
     "polka": "^0.5.2"
+  },
+  "devDependencies": {
+    "jest": "^27.1.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ]
   }
 }
