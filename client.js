@@ -1,141 +1,126 @@
-const inquirer = require('inquirer');
-const figlet = require('figlet');
+const inquirer = require("inquirer");
+const figlet = require("figlet");
 
-const api = require('./libs/api');
+const api = require("./libs/api");
 
-const mainPrompt = require('./commands/main');
-const loginPrompt = require('./commands/login');
-const depositPrompt = require('./commands/deposit');
-const transferPrompt = require('./commands/transfer');
+
+const mainPrompt = require("./commands/main");
+const loginPrompt = require("./commands/login");
+const depositPrompt = require("./commands/deposit");
+const transferPrompt = require("./commands/transfer");
 
 const runCLI = async () => {
-    
     try {
-
-        const header = figlet.textSync('Demo  ATM', {
-            horizontalLayout: 'default',
-            verticalLayout: 'default',
+        const header = figlet.textSync("Demo  ATM", {
+            horizontalLayout: "default",
+            verticalLayout: "default",
             width: 80,
-            whitespaceBreak: true
+            whitespaceBreak: true,
         });
         console.log(header);
 
         const answers = await inquirer.prompt(loginPrompt);
 
         const serverRes = await api.login(answers);
-        
-        if(serverRes.data) {
-           console.log(`Hello ${serverRes.data.name}!`);
-           console.log(`your balance is $ ${serverRes.data.balance}`);
-           await main(serverRes.data.name);
+
+        if (serverRes.data) {
+            console.log(`Hello ${serverRes.data.name}!`);
+            console.log(`your balance is $ ${serverRes.data.balance}`);
+            await main(serverRes.data.name);
         } else {
             console.log(`error: ${serverRes.error}`);
             await runCLI();
         }
-        
-    
-    } catch(err) {
+    } catch (err) {
         if (err.isTtyError) {
-          console.error('environment not supported');
+            console.error("environment not supported");
         } else {
-          console.error(err);
+            console.error(err);
         }
     }
-    
-}
+};
 
 const main = async (name) => {
-    
     try {
-
         const answers = await inquirer.prompt(mainPrompt);
-        switch(answers.mainmenu) {
-
-            case 'deposit':
+        switch (answers.mainmenu) {
+            case "deposit":
                 await deposit(name);
-            break;
+                break;
 
-            case 'transfer':
+            case "transfer":
                 await transfer(name);
-            break;
+                break;
 
-            case 'logout':
+            case "logout":
                 await logout(name);
-            break;
+                break;
         }
-    
-    } catch(err) {
+    } catch (err) {
         if (err.isTtyError) {
-          console.error('environment not supported');
+            console.error("environment not supported");
         } else {
-          console.error(err);
+            console.error(err);
         }
     }
-}
+};
 
 const deposit = async (name) => {
-    
     try {
         const answers = await inquirer.prompt(depositPrompt);
-        const data = Object.assign(answers, {name: name});
+        const data = Object.assign(answers, { name: name });
         const serverRes = await api.deposit(data);
-        if(serverRes.data) {
-           console.log(`your balance is $ ${serverRes.data.balance}`);
-           await main(serverRes.data.name);
+        if (serverRes.data) {
+            console.log(`your balance is $ ${serverRes.data.balance}`);
+            await main(serverRes.data.name);
         } else {
             console.log(serverRes);
             await runCLI();
         }
-
-    } catch(err) {
+    } catch (err) {
         if (err.isTtyError) {
-          console.error('environment not supported');
+            console.error("environment not supported");
         } else {
-          console.error(err);
+            console.error(err);
         }
     }
-
-}
+};
 
 const transfer = async (name) => {
-
     try {
         const answers = await inquirer.prompt(transferPrompt);
-        Object.assign(answers, {name: name});
+        Object.assign(answers, { name: name });
         const serverRes = await api.transfer(answers);
-        
-        if(serverRes.data) {
-           console.log(`transfered ${serverRes.amount} to $ ${serverRes.data.destination}`);
-           console.log(`your balance is $ ${serverRes.data.balance}`);
-           await main(serverRes.data.name);
+
+        if (serverRes.data) {
+            console.log(
+                `transfered ${serverRes.amount} to $ ${serverRes.data.destination}`
+            );
+            console.log(`your balance is $ ${serverRes.data.balance}`);
+            await main(serverRes.data.name);
         } else {
             console.log(`error: ${serverRes.error}`);
             await runCLI();
         }
-
-    } catch(err) {
+    } catch (err) {
         if (err.isTtyError) {
-          console.error('environment not supported');
+            console.error("environment not supported");
         } else {
-          console.error(err);
+            console.error(err);
         }
     }
-
-}
+};
 
 const logout = async (name) => {
-
     try {
         console.log(`good bye, ${name}!`);
-    
-    } catch(err) {
+    } catch (err) {
         if (err.isTtyError) {
-          console.error('environment not supported');
+            console.error("environment not supported");
         } else {
-          console.error(err);
+            console.error(err);
         }
     }
-
-}
+};
 
 runCLI();
